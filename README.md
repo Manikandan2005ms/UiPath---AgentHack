@@ -11,8 +11,8 @@ in control of high-stakes calls. Built end-to-end on UiPath.
 
 ## 🎬 Demo
 
-- **Demo video:** <PASTE YOUR YOUTUBE LINK HERE>
-- **Devpost:** <PASTE YOUR DEVPOST PROJECT LINK HERE>
+- **Demo video: https://www.youtube.com/watch?v=22N_THpGC4U
+- **Devpost:** 
 
 ---
 
