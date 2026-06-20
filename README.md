@@ -11,8 +11,8 @@ in control of high-stakes calls. Built end-to-end on UiPath.
 
 ## 🎬 Demo
 
-- **Demo video: https://www.youtube.com/watch?v=22N_THpGC4U
-- **Devpost:** 
+- **Demo video:** <PASTE YOUR YOUTUBE LINK HERE>
+- **Devpost:** <PASTE YOUR DEVPOST PROJECT LINK HERE>
 
 ---
 
@@ -29,6 +29,30 @@ removing the human from the loop on high-impact decisions.
 
 ---
 
+## 🏗️ Architecture
+
+High-level view — a disruption signal flows through three UiPath services and ends in a
+fully auditable resolution:
+
+```mermaid
+flowchart LR
+    A["📰 Disruption Signal<br/>news + supplier exposure data"] --> B
+
+    subgraph UIP["UiPath Platform"]
+        direction TB
+        B["🤖 Agent Builder<br/>Supply Chain Risk Analyst<br/><i>classify · score · recommend · draft RFQ</i>"]
+        C["🔀 Maestro (BPMN)<br/>Orchestration + severity routing"]
+        D["👤 Action Center<br/>Human approval (High severity)"]
+        B --> C
+        C -->|High severity| D
+        D -->|Approve / Reject| C
+    end
+
+    C --> E["📋 Audit Record<br/>Case Resolved"]
+```
+
+---
+
 ## 🤖 What it does
 
 Given a disruption signal and the affected supplier's exposure data, an AI agent runs a
@@ -39,17 +63,57 @@ four-step analysis, then a Maestro process acts on the result autonomously:
 3. **Recommends an action** — switch to a named backup supplier / expedite freight / monitor
 4. **Drafts a complete, send-ready RFQ email** to the backup supplier (correct part, quantity, lead time)
 
-The process then routes by severity:
+---
 
-```
-Signal → Assess Disruption (Agent) → Severity? (gateway)
-                                       ├── High   → Human approval in Action Center (full AI dossier)
-                                       ├── Medium → Auto-send RFQ to backup supplier
-                                       └── Low    → Log & monitor (auto-resolve)
-                                             → Merge → Write audit record → Case Resolved
+## 🔀 Process Flow (Maestro BPMN)
+
+```mermaid
+flowchart TD
+    Start(["▶ Disruption Signal Received"]) --> Agent["🤖 Assess Disruption<br/>(Agent Builder)<br/>classify · score · recommend · draft RFQ"]
+    Agent --> Gate{"Severity?"}
+
+    Gate -->|"severity == High"| Human["👤 War Room Approval<br/>Action Center<br/><i>reviewer sees full AI dossier</i>"]
+    Gate -->|"severity == Medium<br/>(default path)"| RFQ["⚙️ Send RFQ to<br/>Backup Supplier"]
+    Gate -->|"severity == Low"| Mon["⚙️ Log & Monitor<br/>(auto-resolve)"]
+
+    Human --> Merge{"Merge"}
+    RFQ --> Merge
+    Mon --> Merge
+    Merge --> Audit["📋 Write Audit Record"]
+    Audit --> End(["⏹ Case Resolved"])
 ```
 
 Every path ends in an **audit record** — full traceability regardless of outcome.
+
+---
+
+## 🔁 Decision Sequence
+
+How a single high-severity case flows through the system:
+
+```mermaid
+sequenceDiagram
+    participant S as 📰 Signal
+    participant A as 🤖 Agent (Agent Builder)
+    participant M as 🔀 Maestro
+    participant H as 👤 Human (Action Center)
+    participant L as 📋 Audit Log
+
+    S->>A: news_signal + exposure data
+    A->>A: classify · score severity · recommend · draft RFQ
+    A-->>M: JSON {disruption_type, severity, recommended_action, rfq_draft}
+    M->>M: evaluate severity gateway
+    alt severity == High
+        M->>H: create approval task with full dossier
+        H-->>M: Approve / Reject
+    else severity == Medium
+        M->>M: auto-send RFQ
+    else severity == Low
+        M->>M: log & monitor
+    end
+    M->>L: write audit record
+    M-->>S: Case Resolved
+```
 
 ---
 
